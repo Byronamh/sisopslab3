@@ -1,0 +1,53 @@
+1.¿Qué es una race conditiony por qué hay que evitarlas?
+Una race condition es cuando dos o más threads intentan acceder a un recurso compartido al mismo tiempo o concurrentemente. 
+Se debe evitar a toda cosa por las implicaciones negativas que puede tener en la ejecución de un archivo, como pausas pausas de ejecución, errores, etc.
+---
+2.¿Cuál es la relación, en Linux,entre pthreadsy clone()? ¿Hay diferencia al crear thread scon uno o con otro?¿Qué es más recomendable?
+Clone es una llamada al sistema que permite duplicar (clonar) un thread, iniciando uno nuevo identico al original.
+Los threads creados por pthreads generalmente (depende del distro) implementan clone().
+Los threads sin usar pthreads tienden a ser más dificiles de manejar y sincronizar. Lo recomendable es usar pthreads xd
+---
+3.¿Dónde,en su programa,hay paralelización de tareas, y dónde de datos?
+Se usó OpenMP con el pragrma `omp parallel for`. En el programa se paraleliza tareas con el creado independiente de
+threads para procesar y trabajar filas/columnas.
+---
+4.Al  agregar  los #pragmas  a  los  ciclos for,  ¿cuántos  LWP’shay  abiertos  antes  de  terminar  el main()y cuántos durante la revisión de columnas?¿Cuántos user threadsdeben haber abiertosen cada caso, entonces?Hint:recuerdeel modelo de multithreadingque usanLinuxy Windows.
+Se utilizan 11 threads y 9059 LWP. 
+---
+5.Al limitar el número de threadsen main()a uno, ¿cuántos LWP’s hay abiertos durante la revisión de columnas? Compare esto con el número de LWP’s abiertos antes de limitar el número de threadsen main(). ¿Cuántos threads(en general) creaOpenMP por defecto?
+Depende de cuantos cores se están ejecutando. N cores debe ser igual a n threads. Entonces el
+número de threads que pueden ejecutarse simultáneamente es: total_threads = num_procs *
+factor de hyperthreading. 
+---
+6.Observe cuáles LWP’s están abiertos durante la revisión de columnas según ps. ¿Qué significa la primera columna de  resultados de  este comando? ¿Cuál es  el LWP que  está  inactivo y por qué está inactivo?Hint: consulte las páginas del manual sobre ps.
+El kernel puede distinguir entre los que se ejecutan paralalelamente y los completos. Dentro de
+este se puede ver el proceso creado en donde los threads están realizando operaciones.
+---
+7.Comparelos resultados de psen la pregunta anterior con los que son desplegados por la funciónde revisión de columnas per se.¿Qué es un thread teamen OpenMP y cuál es el master threaden  este caso?¿Por  qué  parece  haber  un thread“corriendo”, pero que  no  está  haciendo  nada? ¿Qué significa el término busy-wait?¿Cómo maneja OpenMP su thread pool?
+Omp teams crea una colección de thread team. Para una target region sin especificar los teams, un
+solo equipo es creado y su master thread ejecuta el target region. El limite es 002 threads. Hay un
+thread que se ejecuta desde el principio hasta el final, y ese es el master thread. Las secciones
+paralelas del programa harán que los threads adicionales hagan fork. Por lo que crean threads
+esclavos. Aparece un Thread corriendo sin hacer nada debido a que es un thread esclavo. Busywaiting es cuando un proceso verifica repetidamente una condición, esta “esperando” la
+condición, pero esta “ocupado” comprobándolo. Esto hará que el proceso consuma CPU.
+OpenMp es estrictamente un modelo de thread de fork/join. En algunas implementaciones los
+threads se crean al inicio de una region paralela y se destruyen al final de la region paralela. Las
+aplicaciones de OpenMp normalmente tienen varias regiones paralelas con regiones seriales
+intermedias.
+La creación y destrucción de threads para cada región paralela puede resultar en overhead
+especialmente si la region paralela esta adentro de un loop, por lo tanto OpenMp utiliza thread
+pools. El pool de worker threads es creado en la primera region paralela. Estos threads existen por
+la duración de la ejecución de un programa. Mas threads se pueden agregar si lo pide el programa.
+Los threads no se destruyen hasta que se ejecute la ultima región paralela. 
+---
+8.Luego  de  agregar por  primera  vez la  cláusula schedule(dynamic)y  ejecutar  su  programa repetidas veces, ¿cuál es el máximo número de threadstrabajando según la funciónde revisión de columnas? Al comparar este número con la cantidad de LWP’s que se creaban antes de agregar schedule(), ¿qué deduce sobre la distribución de trabajo que OpenMP hace por defecto?
+El máximo numero de threads es 11. Se puede definir la eficiencia de la ejecución del proceso al
+tener libertad de escoger el numero de threads.
+---
+9.Luego  de  agregar  las  llamadas omp_set_num_threads()a  cada  función  donde  se  usa OpenMP  y  probar  su  programa,  antes  de  agregar omp_set_nested(true),  ¿hay  más  o menos concurrencia en su programa? ¿Es esto sinónimo de un mejor desempeño? Explique.
+Este nos va a dar una mejor recurrencia pero no mejor desempeño.
+
+---
+10.¿Cuál esel efecto de agregar omp_set_nested(true)? Explique.
+Habilita regiones paralelas anidadas, asi los miembros del equipo pueden crear nuevos equipos. La
+funcion toma el equivalente especifico del lenguaje verdadero y falso, donde
